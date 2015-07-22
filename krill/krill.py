@@ -21,7 +21,6 @@ import re
 import sys
 import time
 import codecs
-import hashlib
 import argparse
 import calendar
 from datetime import datetime
@@ -122,7 +121,7 @@ class TextExcerpter:
 
 
 class Application:
-    _known_hashes = set()
+    _known_items = set()
 
 
     def __init__(self, args):
@@ -220,14 +219,11 @@ class Application:
 
         items = list()
         def add_item(item, pattern=None):
-            # Note that item.time is excluded from duplicate detection
-            # as it sometimes changes without affecting the content
-            hash_code = hashlib.md5((item.source + item.text + item.link)
-                                    .encode("utf-8")).hexdigest()
-            if hash_code in self._known_hashes:
+            item_id = (item.source, item.link)
+            if item_id in self._known_items:
                 # Do not print an item more than once
                 return
-            self._known_hashes.add(hash_code)
+            self._known_items.add(item_id)
             items.append((item, pattern))
 
         for source in sources:
