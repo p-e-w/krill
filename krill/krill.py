@@ -32,7 +32,7 @@ from blessings import Terminal
 
 
 
-StreamItem = namedtuple("StreamItem", ["source", "time", "text", "link"])
+StreamItem = namedtuple("StreamItem", ["source", "time", "title", "text", "link"])
 
 
 
@@ -65,7 +65,7 @@ class StreamParser:
 
             link = "https://twitter.com%s" % header.find("a", class_="tweet-timestamp")["href"]
 
-            yield StreamItem("%s (@%s)" % (name, username), time, text, link)
+            yield StreamItem("%s (@%s)" % (name, username), time, None, text, link)
 
 
     def get_feed_items(self, xml):
@@ -73,8 +73,8 @@ class StreamParser:
 
         for entry in feed_data.entries:
             time = datetime.fromtimestamp(calendar.timegm(entry.published_parsed))
-            text = "%s - %s" % (entry.title, self._html_to_text(entry.description))
-            yield StreamItem(feed_data.feed.title, time, text, entry.link)
+            yield StreamItem(feed_data.feed.title, time, entry.title,
+                             self._html_to_text(entry.description), entry.link)
 
 
 
@@ -91,11 +91,11 @@ class TextExcerpter:
 
     # Returns a portion of text at most max_length in length
     # and containing the first match of pattern, if specified
-    def get_excerpt(self, text, pattern=None, max_length=300):
+    def get_excerpt(self, text, max_length, pattern=None):
         if len(text) <= max_length:
             return text, False, False
 
-        if pattern is None:
+        if pattern is None or not pattern.search(text):
             return self._clip_right(text[0:max_length]), False, True
         else:
             match = pattern.search(text)
@@ -168,8 +168,14 @@ class Application:
                                    term.yellow(item.time.strftime("%H:%M")))
         print("%s on %s:" % (term.cyan(item.source), time_label))
 
+        title = item.title
+        if title is not None:
+            if pattern is not None:
+                title = pattern.sub(term.bold_black_on_bright_yellow("\\g<0>") + term.bold, title)
+            print("   %s" % term.bold(title))
+
         excerpter = TextExcerpter()
-        excerpt, clipped_left, clipped_right = excerpter.get_excerpt(item.text, pattern)
+        excerpt, clipped_left, clipped_right = excerpter.get_excerpt(item.text, 220, pattern)
 
         # Hashtag or mention
         excerpt = re.sub("(?<!\w)([#@])(\w+)",
@@ -226,7 +232,8 @@ class Application:
             for item in self._get_stream_items(source):
                 if patterns:
                     for pattern in patterns:
-                        if pattern.search(item.text):
+                        if pattern.search(item.text) or \
+                           (item.title is not None and pattern.search(item.title)):
                             add_item(item, pattern)
                             break
                 else:
