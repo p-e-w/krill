@@ -166,27 +166,23 @@ class Application:
         term = Terminal()
         time_label = "%s at %s" % (term.yellow(item.time.strftime("%a, %d %b %Y")),
                                    term.yellow(item.time.strftime("%H:%M")))
-        print("%s on %s:" % (term.bright_cyan(item.source), time_label))
+        print("%s on %s:" % (term.cyan(item.source), time_label))
 
         excerpter = TextExcerpter()
         excerpt, clipped_left, clipped_right = excerpter.get_excerpt(item.text, pattern)
 
         # Hashtag or mention
         excerpt = re.sub("(?<!\w)([#@])(\w+)",
-                         term.green("\\g<1>") + term.bright_green("\\g<2>") + term.bright_white,
-                         excerpt)
+                         term.green("\\g<1>") + term.bright_green("\\g<2>"), excerpt)
         # URL in one of the forms commonly encountered on the web
         excerpt = re.sub("(\w+://)?[\w.-]+\.[a-zA-Z]{2,4}(?(1)|/)[\w#?&=%/:.-]*",
-                         term.bright_magenta_underline("\\g<0>") + term.bright_white,
-                         excerpt)
+                         term.bright_magenta_underline("\\g<0>"), excerpt)
 
         if pattern is not None:
             # TODO: This can break previously applied highlighting (e.g. URLs)
-            excerpt = pattern.sub(term.black_on_bright_yellow("\\g<0>") + term.bright_white,
-                                  excerpt)
+            excerpt = pattern.sub(term.black_on_bright_yellow("\\g<0>"), excerpt)
 
-        print("   %s%s%s" % ("... " if clipped_left else "",
-                             term.bright_white(excerpt),
+        print("   %s%s%s" % ("... " if clipped_left else "", excerpt,
                              " ..." if clipped_right else ""))
         print("   %s" % term.bright_blue_underline(item.link))
 
