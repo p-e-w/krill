@@ -1,3 +1,6 @@
+[![PyPI](https://img.shields.io/pypi/v/krill.svg)](https://pypi.python.org/pypi/krill) ![Python versions](https://img.shields.io/pypi/pyversions/krill.svg) ![krill rocks](https://img.shields.io/badge/krill-rocks-ff69b4.svg)
+
+
 # Want news? Just `krill` it!
 
 [Krill](https://en.wikipedia.org/wiki/Krill) are [*filter feeders*](https://en.wikipedia.org/wiki/Filter_feeder). True to its namesake, `krill` :fried_shrimp: filters feeds. It is not picky about its diet, and will happily consume **RSS, Atom, CDF** and even **Twitter** :bird: feeds (*no credentials required!*). It aggregates feed items from all sources you specify, filters out those that interest you, and displays them as a **live stream** :fire: of clean, legible command line output.
