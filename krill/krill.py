@@ -19,10 +19,11 @@ except ImportError:
 
 import re
 import sys
+import time
 import codecs
 import hashlib
 import argparse
-from time import sleep, mktime
+import calendar
 from datetime import datetime
 from collections import namedtuple
 
@@ -72,7 +73,7 @@ class StreamParser:
         feed_data = feedparser.parse(xml)
 
         for entry in feed_data.entries:
-            time = datetime.fromtimestamp(mktime(entry.published_parsed))
+            time = datetime.fromtimestamp(calendar.timegm(entry.published_parsed))
             text = "%s - %s" % (entry.title, self._html_to_text(entry.description))
             yield StreamItem(feed_data.feed.title, time, text, entry.link)
 
@@ -257,7 +258,7 @@ class Application:
                 self.update()
                 if self.args.update_interval <= 0:
                     break
-                sleep(self.args.update_interval)
+                time.sleep(self.args.update_interval)
             except KeyboardInterrupt:
                 # Do not print stacktrace if user exits with Ctrl+C
                 sys.exit()
