@@ -40,7 +40,7 @@ class StreamParser:
     def _html_to_text(self, html):
         # Hack to prevent Beautiful Soup from collapsing space-keeping tags
         # until no whitespace remains at all
-        html = re.sub("<(br|p)", " \\g<0>", html, flags=re.IGNORECASE)
+        html = re.sub("<(br|p|li)", " \\g<0>", html, flags=re.IGNORECASE)
         text = BeautifulSoup(html, "html.parser").get_text()
         # Idea from http://stackoverflow.com/a/1546251
         return " ".join(text.strip().split())
