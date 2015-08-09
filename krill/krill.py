@@ -290,7 +290,7 @@ class Application:
 
     def run(self):
         term = Terminal()
-        print("%s (%s)" % (term.bold("krill 0.2.0"),
+        print("%s (%s)" % (term.bold("krill 0.3.0"),
                            term.underline("https://github.com/p-e-w/krill")))
 
         while True:
