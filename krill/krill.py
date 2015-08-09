@@ -173,6 +173,19 @@ class Application:
         return [line for line in lines if line and not line.startswith("#")]
 
 
+    # Extracts feed URLs from an OPML file (https://en.wikipedia.org/wiki/OPML)
+    def _read_opml_file(self, filename):
+        try:
+            with open(filename, "r") as myfile:
+                opml = myfile.read()
+        except Exception as error:
+            self._print_error("Unable to read file '%s': %s" % (filename, str(error)))
+            sys.exit(1)
+
+        return [match.group(2).strip() for match in
+                re.finditer("xmlUrl\s*=\s*([\"'])(.*?)\\1", opml, flags=re.IGNORECASE)]
+
+
     def _highlight_pattern(self, text, pattern, pattern_style, text_style=None):
         if pattern is None:
             return text if text_style is None else text_style(text)
@@ -223,7 +236,10 @@ class Application:
         if self.args.sources is not None:
             sources.extend(self.args.sources)
         if self.args.sources_file is not None:
-            sources.extend(self._read_file(self.args.sources_file))
+            if self.args.sources_file.endswith(".opml"):
+                sources.extend(self._read_opml_file(self.args.sources_file))
+            else:
+                sources.extend(self._read_file(self.args.sources_file))
         if not sources:
             self._print_error("No source specifications found")
             sys.exit(1)
@@ -266,7 +282,7 @@ class Application:
                     add_item(item)
 
         # Print latest news last
-        items.sort(key=lambda item: item[0].time)
+        items.sort(key=lambda item: datetime.now() if item[0].time is None else item[0].time)
 
         for item in items:
             self._print_stream_item(item[0], item[1])
@@ -304,7 +320,8 @@ def main():
     arg_parser.add_argument("-s", "--sources", nargs="+",
             help="URLs to pull data from", metavar="URL")
     arg_parser.add_argument("-S", "--sources-file",
-            help="file from which to load source URLs", metavar="FILE")
+            help="file from which to load source URLs " +
+                 "(OPML format assumed if filename ends with \".opml\")", metavar="FILE")
     arg_parser.add_argument("-f", "--filters", nargs="+",
             help="patterns used to select feed items to print", metavar="REGEX")
     arg_parser.add_argument("-F", "--filters-file",

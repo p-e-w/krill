@@ -34,7 +34,8 @@ krill [-h] [-s URL [URL ...]] [-S FILE] [-f REGEX [REGEX ...]]
   -s URL [URL ...], --sources URL [URL ...]
                         URLs to pull data from
   -S FILE, --sources-file FILE
-                        file from which to load source URLs
+                        file from which to load source URLs (OPML format
+                        assumed if filename ends with ".opml")
   -f REGEX [REGEX ...], --filters REGEX [REGEX ...]
                         patterns used to select feed items to print
   -F FILE, --filters-file FILE
@@ -52,7 +53,7 @@ krill -s "https://twitter.com/nasa" -f "new ?horizons"
 
 will follow NASA's :rocket: Twitter stream, printing only tweets that mention the [*New Horizons* probe](https://en.wikipedia.org/wiki/New_Horizons).
 
-`krill` automatically determines whether to treat a web document as a Twitter or an XML feed. If multiple sources and/or filters are loaded from a file with the `-S` and `-F` tags, each must be on a separate line. Empty lines and lines starting with `#` (comments) are ignored.
+`krill` automatically determines whether to treat a web document as a Twitter or an XML feed. If multiple sources and/or filters are loaded from a file with the `-S` and `-F` tags, each must be on a separate line (except if the sources file uses the [OPML](https://en.wikipedia.org/wiki/OPML) format, in which case all `xmlUrl` attributes are loaded). Empty lines and lines starting with `#` (comments) are ignored.
 
 Inline and file specifications may be combined freely. If more than one filter is given, items matching *any* of the filters are printed. If no filter is given, all items are printed.
 
