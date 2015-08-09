@@ -68,13 +68,26 @@ class StreamParser:
             yield StreamItem("%s (@%s)" % (name, username), time, None, text, link)
 
 
-    def get_feed_items(self, xml):
+    def get_feed_items(self, xml, url):
         feed_data = feedparser.parse(xml)
+        # Default to feed URL if no title element is present
+        feed_title = feed_data.feed.get("title", url)
 
         for entry in feed_data.entries:
-            time = datetime.fromtimestamp(calendar.timegm(entry.published_parsed))
-            yield StreamItem(feed_data.feed.title, time, entry.title,
-                             self._html_to_text(entry.description), entry.link)
+            time = datetime.fromtimestamp(calendar.timegm(entry.published_parsed)) \
+                   if "published_parsed" in entry else None
+            title = entry.get("title")
+            text = self._html_to_text(entry.description) if "description" in entry else None
+            link = entry.get("link")
+
+            # Some feeds put the text in the title element
+            if text is None and title is not None:
+                text = title
+                title = None
+
+            # At least one element must contain text for the item to be useful
+            if title or text or link:
+                yield StreamItem(feed_title, time, title, text, link)
 
 
 
@@ -145,7 +158,7 @@ class Application:
         if "//twitter.com/" in url:
             return parser.get_tweets(data)
         else:
-            return parser.get_feed_items(data)
+            return parser.get_feed_items(data, url)
 
 
     def _read_file(self, filename):
@@ -160,37 +173,48 @@ class Application:
         return [line for line in lines if line and not line.startswith("#")]
 
 
+    def _highlight_pattern(self, text, pattern, pattern_style, text_style=None):
+        if pattern is None:
+            return text if text_style is None else text_style(text)
+        if text_style is None:
+            return pattern.sub(pattern_style("\\g<0>"), text)
+        return text_style(pattern.sub(pattern_style("\\g<0>") + text_style, text))
+
+
     def _print_stream_item(self, item, pattern=None):
         print("")
 
         term = Terminal()
-        time_label = "%s at %s" % (term.yellow(item.time.strftime("%a, %d %b %Y")),
-                                   term.yellow(item.time.strftime("%H:%M")))
-        print("%s on %s:" % (term.cyan(item.source), time_label))
+        time_label = " on %s at %s" % (term.yellow(item.time.strftime("%a, %d %b %Y")),
+                                       term.yellow(item.time.strftime("%H:%M"))) \
+                     if item.time is not None else ""
+        print("%s%s:" % (term.cyan(item.source), time_label))
 
-        title = item.title
-        if title is not None:
-            if pattern is not None:
-                title = pattern.sub(term.bold_black_on_bright_yellow("\\g<0>") + term.bold, title)
-            print("   %s" % term.bold(title))
+        if item.title is not None:
+            print("   %s" % self._highlight_pattern(item.title, pattern,
+                                                    term.bold_black_on_bright_yellow, term.bold))
 
-        excerpter = TextExcerpter()
-        excerpt, clipped_left, clipped_right = excerpter.get_excerpt(item.text, 220, pattern)
+        if item.text is not None:
+            excerpter = TextExcerpter()
+            excerpt, clipped_left, clipped_right = excerpter.get_excerpt(item.text, 220, pattern)
 
-        # Hashtag or mention
-        excerpt = re.sub("(?<!\w)([#@])(\w+)",
-                         term.green("\\g<1>") + term.bright_green("\\g<2>"), excerpt)
-        # URL in one of the forms commonly encountered on the web
-        excerpt = re.sub("(\w+://)?[\w.-]+\.[a-zA-Z]{2,4}(?(1)|/)[\w#?&=%/:.-]*",
-                         term.bright_magenta_underline("\\g<0>"), excerpt)
+            # Hashtag or mention
+            excerpt = re.sub("(?<!\w)([#@])(\w+)",
+                             term.green("\\g<1>") + term.bright_green("\\g<2>"), excerpt)
+            # URL in one of the forms commonly encountered on the web
+            excerpt = re.sub("(\w+://)?[\w.-]+\.[a-zA-Z]{2,4}(?(1)|/)[\w#?&=%/:.-]*",
+                             term.bright_magenta_underline("\\g<0>"), excerpt)
 
-        if pattern is not None:
             # TODO: This can break previously applied highlighting (e.g. URLs)
-            excerpt = pattern.sub(term.black_on_bright_yellow("\\g<0>"), excerpt)
+            excerpt = self._highlight_pattern(excerpt, pattern, term.black_on_bright_yellow)
 
-        print("   %s%s%s" % ("... " if clipped_left else "", excerpt,
-                             " ..." if clipped_right else ""))
-        print("   %s" % term.bright_blue_underline(item.link))
+            print("   %s%s%s" % ("... " if clipped_left else "", excerpt,
+                                 " ..." if clipped_right else ""))
+
+        if item.link is not None:
+            print("   %s" % self._highlight_pattern(item.link, pattern,
+                                                    term.black_on_bright_yellow_underline,
+                                                    term.bright_blue_underline))
 
 
     def update(self):
@@ -232,8 +256,9 @@ class Application:
             for item in self._get_stream_items(source):
                 if patterns:
                     for pattern in patterns:
-                        if pattern.search(item.text) or \
-                           (item.title is not None and pattern.search(item.title)):
+                        if (item.title is not None and pattern.search(item.title)) or \
+                           (item.text is not None and pattern.search(item.text)) or \
+                           (item.link is not None and pattern.search(item.link)):
                             add_item(item, pattern)
                             break
                 else:
