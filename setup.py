@@ -41,6 +41,7 @@ setup(
         "beautifulsoup4",
         "feedparser",
         "blessings",
+        "requests",
     ],
 
     entry_points={

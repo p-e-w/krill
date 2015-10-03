@@ -20,7 +20,7 @@ pip install krill
 
 either as a superuser or from a [virtualenv](https://virtualenv.pypa.io) environment.
 
-Of course, you can also [download the script](krill/krill.py) directly from this repository, in which case you will need to install the dependencies [Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) (*what a library!* :star:), [feedparser](https://github.com/kurtmckee/feedparser) and [blessings](https://github.com/erikrose/blessings) manually.
+Of course, you can also [download the script](krill/krill.py) directly from this repository, in which case you will need to install the dependencies [Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) (*what a library!* :star:), [feedparser](https://github.com/kurtmckee/feedparser), [Blessings](https://github.com/erikrose/blessings) and [Requests](https://github.com/kennethreitz/requests) manually.
 
 
 ## Usage
@@ -54,6 +54,8 @@ krill -s "https://twitter.com/nasa" -f "new ?horizons"
 will follow NASA's :rocket: Twitter stream, printing only tweets that mention the [*New Horizons* probe](https://en.wikipedia.org/wiki/New_Horizons).
 
 `krill` automatically determines whether to treat a web document as a Twitter or an XML feed. If multiple sources and/or filters are loaded from a file with the `-S` and `-F` tags, each must be on a separate line (except if the sources file uses the [OPML](https://en.wikipedia.org/wiki/OPML) format, in which case all `xmlUrl` attributes are loaded). Empty lines and lines starting with `#` (comments) are ignored.
+
+Any URL format accepted by the Requests library is supported. In particular, feeds requiring (basic) HTTP authentication can be accessed by supplying credentials in the URL string with `https://user:password@example.com/feed`.
 
 Inline and file specifications may be combined freely. If more than one filter is given, items matching *any* of the filters are printed. If no filter is given, all items are printed.
 

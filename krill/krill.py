@@ -10,13 +10,6 @@
 # (https://gnu.org/licenses/gpl.html)
 
 
-try:
-    # Python 3
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from urllib2 import urlopen
-
 import re
 import sys
 import time
@@ -26,6 +19,7 @@ import calendar
 from datetime import datetime
 from collections import namedtuple
 
+import requests
 import feedparser
 from bs4 import BeautifulSoup
 from blessings import Terminal
@@ -148,7 +142,8 @@ class Application:
 
     def _get_stream_items(self, url):
         try:
-            data = urlopen(url).read()
+            headers = {"User-Agent": "krill/0.3.0 (https://github.com/p-e-w/krill)"}
+            data = requests.get(url, headers=headers).text
         except Exception as error:
             self._print_error("Unable to retrieve data from URL '%s': %s" % (url, str(error)))
             # The problem might be temporary, so we do not exit
